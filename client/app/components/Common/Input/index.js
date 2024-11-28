@@ -111,9 +111,8 @@ const Input = props => {
       </div>
     );
   } else {
-    const styles = `input-box${inlineElement ? ` inline-btn-box` : ''} ${
-      error ? 'invalid' : ''
-    }`;
+    const styles = `input-box${inlineElement ? ` inline-btn-box` : ''} ${error ? 'invalid' : ''
+      }`;
 
     return (
       <div className={styles}>

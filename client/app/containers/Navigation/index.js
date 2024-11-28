@@ -81,11 +81,10 @@ class Navigation extends React.PureComponent {
         <div className='d-flex'>
           <img
             className='item-image'
-            src={`${
-              suggestion.imageUrl
-                ? suggestion.imageUrl
-                : '/images/placeholder-image.png'
-            }`}
+            src={`${suggestion.imageUrl
+              ? suggestion.imageUrl
+              : '/images/placeholder-image.png'
+              }`}
           />
           <div>
             <Container>
@@ -96,7 +95,7 @@ class Navigation extends React.PureComponent {
               </Row>
               <Row>
                 <Col>
-                  <span className='price'>${suggestion.price}</span>
+                  <span className='price'>₹{suggestion.price}</span>
                 </Col>
               </Row>
             </Container>
@@ -150,11 +149,11 @@ class Navigation extends React.PureComponent {
               </Col>
               <Col md='4' className='text-center d-none d-md-block'>
                 <i className='fa fa-phone' />
-                <span>Call us 951-999-9999</span>
+                <span>Call us 829-799-7256</span>
               </Col>
               <Col xs='12' className='text-center d-block d-md-none'>
                 <i className='fa fa-phone' />
-                <span> Need advice? Call us 951-999-9999</span>
+                <span> Need advice? Call us 829-799-7256</span>
               </Col>
             </Row>
           </Container>
@@ -179,11 +178,13 @@ class Navigation extends React.PureComponent {
                     onClick={() => this.toggleMenu()}
                   />
                 )}
-                <Link to='/'>
-                  <h1 className='logo'>MERN Store</h1>
+                <Link to='/' style={{ display: "flex", width: "100%", height: "100%" }}>
+                  <img src="/images/logo.jpg" height="30" width="30" style={{}} />
+                  <h1 className='logo'>Kanha Collections</h1>
                 </Link>
               </div>
             </Col>
+
             <Col
               xs={{ size: 12, order: 4 }}
               sm={{ size: 12, order: 4 }}
@@ -226,7 +227,7 @@ class Navigation extends React.PureComponent {
               sm={{ size: 12, order: 2 }}
               md={{ size: 9, order: 1 }}
               lg={{ size: 4, order: 3 }}
-              // className='px-0'
+            // className='px-0'
             >
               <Navbar color='light' light expand='md' className='mt-1 mt-md-0'>
                 <CartIcon

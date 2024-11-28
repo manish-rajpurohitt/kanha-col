@@ -12,6 +12,7 @@ import { Row, Col, DropdownItem } from 'reactstrap';
 import { ROLES, CART_ITEM_STATUS } from '../../../constants';
 import Button from '../../Common/Button';
 import DropdownConfirm from '../../Common/DropdownConfirm';
+import { ORDER_STATUS } from '../../../../../server/constants';
 
 const OrderItems = props => {
   const { order, user, updateOrderItemStatus } = props;
@@ -50,20 +51,7 @@ const OrderItems = props => {
     } else if (item.status !== 'Cancelled') {
       if (!isAdmin) {
         return (
-          <DropdownConfirm label='Cancel'>
-            <div className='d-flex flex-column align-items-center justify-content-center p-2'>
-              <p className='text-center mb-2'>{`Are you sure you want to cancel ${item.product?.name}.`}</p>
-              <Button
-                variant='danger'
-                id='CancelOrderItemPopover'
-                size='sm'
-                text='Confirm Cancel'
-                role='menuitem'
-                className='cancel-order-btn'
-                onClick={() => updateOrderItemStatus(item._id, 'Cancelled')}
-              />
-            </div>
-          </DropdownConfirm>
+          <></>
         );
       } else {
         return (
@@ -89,11 +77,10 @@ const OrderItems = props => {
                 <div className='d-flex align-items-center box'>
                   <img
                     className='item-image'
-                    src={`${
-                      item.product && item.product.imageUrl
-                        ? item.product.imageUrl
-                        : '/images/placeholder-image.png'
-                    }`}
+                    src={`${item.product && item.product.imageUrl
+                      ? item.product.imageUrl
+                      : '/images/placeholder-image.png'
+                      }`}
                   />
                   <div className='d-md-flex flex-1 align-items-start ml-4 item-box'>
                     <div className='item-details'>
@@ -128,7 +115,7 @@ const OrderItems = props => {
                       </p>
                       <p>
                         Total Price
-                        <span className='order-label'>{` $${item.totalPrice}`}</span>
+                        <span className='order-label'>{` ₹${item.totalPrice}`}</span>
                       </p>
                     </div>
                   </div>
@@ -146,7 +133,7 @@ const OrderItems = props => {
                   </div>
 
                   <div className='text-center'>
-                    <p className='order-label'>{` $${item.totalPrice}`}</p>
+                    <p className='order-label'>{` ₹${item.totalPrice}`}</p>
 
                     <p>Total Price</p>
                   </div>

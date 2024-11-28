@@ -9,7 +9,7 @@ import React from 'react';
 import Button from '../../Common/Button';
 
 const Checkout = props => {
-  const { authenticated, handleShopping, handleCheckout, placeOrder } = props;
+  const { authenticated, handleShopping, handleCheckout, placeOrder, selectedAddress } = props;
 
   return (
     <div className='easy-checkout'>
@@ -22,8 +22,9 @@ const Checkout = props => {
         {authenticated ? (
           <Button
             variant='primary'
+            disabled={(selectedAddress === "" || selectedAddress === null)}
             text='Place Order'
-            onClick={() => placeOrder()}
+            onClick={() => placeOrder(selectedAddress.value)}
           />
         ) : (
           <Button

@@ -6,7 +6,7 @@
 
 import { push } from 'connected-react-router';
 import axios from 'axios';
-import { success } from 'react-notification-system-redux';
+import { info, success } from 'react-notification-system-redux';
 
 import {
   FETCH_ORDERS,
@@ -22,6 +22,7 @@ import { clearCart, getCartId } from '../Cart/actions';
 import { toggleCart } from '../Navigation/actions';
 import handleError from '../../utils/error';
 import { API_URL } from '../../constants';
+import { setProductLoading } from '../Product/actions';
 
 export const updateOrderStatus = value => {
   return {
@@ -195,7 +196,7 @@ export const updateOrderItemStatus = (itemId, status) => {
   };
 };
 
-export const addOrder = () => {
+export const addOrder = (addressId) => {
   return async (dispatch, getState) => {
     try {
       const cartId = localStorage.getItem('cart_id');
@@ -204,11 +205,26 @@ export const addOrder = () => {
       if (cartId) {
         const response = await axios.post(`${API_URL}/order/add`, {
           cartId,
+          addressId,
           total
         });
 
-        dispatch(push(`/order/success/${response.data.order._id}`));
+        const res = await axios.post(`${API_URL}/payment/create-order`, {
+          orderId: response.data.order._id
+        });
+
+        const cashfree = Cashfree({
+          mode: process.env.CASHFREE_ENV //or production
+        });
+
+        let checkoutOptions = {
+          paymentSessionId: res.data.payment_session_id,
+          redirectTarget: "_self" //optional ( _self, _blank, or _top)
+        }
+        dispatch(toggleCart());
         dispatch(clearCart());
+        dispatch(push(`/order/success/${response.data.order._id}`));
+        cashfree.checkout(checkoutOptions);
       }
     } catch (error) {
       handleError(error, dispatch);
@@ -216,19 +232,19 @@ export const addOrder = () => {
   };
 };
 
-export const placeOrder = () => {
+export const placeOrder = (addressId) => {
   return (dispatch, getState) => {
+    dispatch(setProductLoading(true));
+
     const token = localStorage.getItem('token');
 
     const cartItems = getState().cart.cartItems;
 
     if (token && cartItems.length > 0) {
       Promise.all([dispatch(getCartId())]).then(() => {
-        dispatch(addOrder());
+        dispatch(addOrder(addressId));
       });
     }
-
-    dispatch(toggleCart());
   };
 };
 

@@ -18,6 +18,18 @@ exports.CART_ITEM_STATUS = {
   Not_processed: 'Not processed'
 };
 
+// Payment_Initiated => Success/Failed => Processing => Shipped => Delivered/Cancelled
+exports.ORDER_STATUS = {
+  Payment_Initiated: 'Payment Initiated',
+  Payment_Success: 'Payment Success',
+  Payment_Failed: 'Payment Failed',
+  Processing: 'Processing',
+  Shipped: 'Shipped',
+  Delivered: 'Delivered',
+  Cancelled: 'Cancelled',
+  Not_processed: 'Not processed'
+};
+
 exports.REVIEW_STATUS = {
   Rejected: 'Rejected',
   Approved: 'Approved',

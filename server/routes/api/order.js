@@ -9,18 +9,21 @@ const Product = require('../../models/product');
 const auth = require('../../middleware/auth');
 const mailgun = require('../../services/mailgun');
 const store = require('../../utils/store');
-const { ROLES, CART_ITEM_STATUS } = require('../../constants');
+const { ROLES, CART_ITEM_STATUS, ORDER_STATUS } = require('../../constants');
 
 router.post('/add', auth, async (req, res) => {
   try {
     const cart = req.body.cartId;
     const total = req.body.total;
+    const address = req.body.addressId;
     const user = req.user._id;
 
     const order = new Order({
       cart,
       user,
-      total
+      address,
+      total,
+      status: ORDER_STATUS.Payment_Initiated
     });
 
     const orderDoc = await order.save();
@@ -37,10 +40,11 @@ router.post('/add', auth, async (req, res) => {
       created: orderDoc.created,
       user: orderDoc.user,
       total: orderDoc.total,
-      products: cartDoc.products
+      products: cartDoc.products,
+      address: orderDoc.address
     };
 
-    await mailgun.sendEmail(order.user.email, 'order-confirmation', newOrder);
+    await mailgun.sendEmail(order.user.email, 'order-information', process.env.CLIENT_URL, newOrder);
 
     res.status(200).json({
       success: true,
@@ -139,6 +143,7 @@ router.get('/', auth, async (req, res) => {
           }
         }
       })
+      .populate('address')
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .exec();
@@ -176,7 +181,7 @@ router.get('/me', auth, async (req, res) => {
             path: 'brand'
           }
         }
-      })
+      }).populate('address')
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .exec();
@@ -213,18 +218,21 @@ router.get('/:orderId', auth, async (req, res) => {
             path: 'brand'
           }
         }
-      });
+      }).populate('address');
     } else {
-      const user = req.user._id;
-      orderDoc = await Order.findOne({ _id: orderId, user }).populate({
-        path: 'cart',
-        populate: {
-          path: 'products.product',
+      try {
+        const user = req.user._id;
+        orderDoc = await Order.findOne({ _id: orderId, user }).populate({
+          path: 'cart',
           populate: {
-            path: 'brand'
+            path: 'products.product',
+            populate: {
+              path: 'brand'
+            }
           }
-        }
-      });
+        }).populate('address')
+      }
+      catch (er) { console.log(er); }
     }
 
     if (!orderDoc || !orderDoc.cart) {
@@ -239,7 +247,10 @@ router.get('/:orderId', auth, async (req, res) => {
       created: orderDoc.created,
       totalTax: 0,
       products: orderDoc?.cart?.products,
-      cartId: orderDoc.cart._id
+      cartId: orderDoc.cart._id,
+      address: orderDoc.address,
+      status: orderDoc?.status,
+      sessId: orderDoc?.paymentSessionId
     };
 
     order = store.caculateTaxAmount(order);
@@ -248,6 +259,7 @@ router.get('/:orderId', auth, async (req, res) => {
       order
     });
   } catch (error) {
+    console.log(error)
     res.status(400).json({
       error: 'Your request could not be processed. Please try again.'
     });
@@ -312,9 +324,8 @@ router.put('/status/item/:itemId', auth, async (req, res) => {
         return res.status(200).json({
           success: true,
           orderCancelled: true,
-          message: `${
-            req.user.role === ROLES.Admin ? 'Order' : 'Your order'
-          } has been cancelled successfully`
+          message: `${req.user.role === ROLES.Admin ? 'Order' : 'Your order'
+            } has been cancelled successfully`
         });
       }
 

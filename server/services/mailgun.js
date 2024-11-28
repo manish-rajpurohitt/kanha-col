@@ -1,38 +1,38 @@
-const Mailgun = require('mailgun-js');
 
 const template = require('../config/template');
-const keys = require('../config/keys');
+const nodemailer = require("nodemailer");
 
-const { key, domain, sender } = keys.mailgun;
 
-class MailgunService {
-  init() {
-    try {
-      return new Mailgun({
-        apiKey: key,
-        domain: domain
-      });
-    } catch (error) {
-      console.warn('Missing mailgun keys');
-    }
-  }
-}
-
-const mailgun = new MailgunService().init();
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_FROM_MAIL,
+    pass: process.env.GMAIL_PASS,
+  },
+});
 
 exports.sendEmail = async (email, type, host, data) => {
   try {
     const message = prepareTemplate(type, host, data);
+    console.log(message)
 
-    const config = {
-      from: `MERN Store! <${sender}>`,
-      to: email,
-      subject: message.subject,
-      text: message.text
+
+    const mailOptions = {
+      from: process.env.GMAIL_FROM_MAIL, // Sender's email address
+      to: email, // Recipient's email address
+      subject: message.subject, // Email subject
+      html: message.text
     };
 
-    return await mailgun.messages().send(config);
+    let ree = await transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        return console.log('Error occurred:', error.message);
+      }
+      console.log('Email sent:', info.response);
+    });
+    console.log(ree, mailOptions);
   } catch (error) {
+    console.log(error);
     return error;
   }
 };
@@ -77,10 +77,16 @@ const prepareTemplate = (type, host, data) => {
       message = template.merchantDeactivateAccount();
       break;
 
+    case 'order-information':
+      message = template.orderInformationEmail(host, data);
+      break;
+
     case 'order-confirmation':
       message = template.orderConfirmationEmail(data);
       break;
 
+    case 'label-generation':
+      message = template.generateShippingLabel(data);
     default:
       message = '';
   }

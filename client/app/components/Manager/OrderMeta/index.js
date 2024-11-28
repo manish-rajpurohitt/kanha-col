@@ -12,19 +12,66 @@ import { CART_ITEM_STATUS } from '../../../constants';
 import { formatDate } from '../../../utils/date';
 import Button from '../../Common/Button';
 import { ArrowBackIcon } from '../../Common/Icon';
+import DropdownConfirm from '../../Common/DropdownConfirm';
+import { ORDER_STATUS } from '../../../../../server/constants';
 
 const OrderMeta = props => {
   const { order, cancelOrder, onBack } = props;
 
-  const renderMetaAction = () => {
-    const isNotDelivered =
-      order.products.filter(i => i.status === CART_ITEM_STATUS.Delivered)
-        .length < 1;
+  const getOrderStatusText = status => {
+    switch (status) {
+      case ORDER_STATUS.Payment_Initiated:
+        return "Make Payment";
+      case ORDER_STATUS.Payment_Failed:
+        return "Payment Failed";
+      case ORDER_STATUS.Payment_Success:
+        return "Payment Success";
+      case ORDER_STATUS.Cancelled:
+        return "Order Cancelled";
+      case ORDER_STATUS.Processing:
+        return "Order Processing";
+      case ORDER_STATUS.Shipped:
+        return "Order is Shipped";
+      case ORDER_STATUS.Delivered:
+        return "Order Delivered";
+      default:
+        return "Order is Processing";
+    }
+  }
 
-    if (isNotDelivered) {
-      return <Button size='sm' text='Cancel Order' onClick={cancelOrder} />;
+  const renderMetaAction = () => {
+
+    if (order.status !== ORDER_STATUS.Cancelled) {
+      //return <Button size='sm' text='Cancel Order' disabled={true} onClick={cancelOrder} />;
+      return (<DropdownConfirm label='Cancel'>
+        <div className='d-flex flex-column align-items-center justify-content-center p-2'>
+          <p className='text-center mb-2'>{`Are you sure you want to cancel the order ? Please write us an email to cancel your order.`}</p>
+          <Button
+            variant='danger'
+            id='CancelOrderItemPopover'
+            size='sm'
+            text='Send Email'
+            role='menuitem'
+            className='cancel-order-btn'
+            onClick={() => window.open(`mailto:kanhacollections66@gmail.com?cc=kanhacollections66+cancelorder@gmail.com&subject=Cancel Order - ${order._id}&body=Hi, I would like to cancel my order.`)}
+          />
+        </div>
+      </DropdownConfirm>);
     }
   };
+
+  const makePayment = () => {
+    console.log(order)
+    const cashfree = Cashfree({
+      mode: process.env.CASHFREE_ENV //or production
+    });
+
+    let checkoutOptions = {
+      paymentSessionId: order.sessId,
+      redirectTarget: "_self" //optional ( _self, _blank, or _top)
+    }
+    cashfree.checkout(checkoutOptions);
+  }
 
   return (
     <div className='order-meta'>
@@ -57,6 +104,22 @@ const OrderMeta = props => {
               <span className='order-label one-line-ellipsis'>{` ${formatDate(
                 order.created
               )}`}</span>
+            </Col>
+          </Row>
+          <Row>
+            <Col xs='4'>
+              <p className='one-line-ellipsis'>Order Status</p>
+            </Col>
+            <Col xs='8'>
+              <Button
+                variant='secondary'
+                id='CancelOrderItemPopover'
+                size='sm'
+                disabled={order.status !== ORDER_STATUS.Payment_Initiated}
+                onClick={() => makePayment()}
+                text={getOrderStatusText(order.status)}
+                role='menuitem'
+              />
             </Col>
           </Row>
         </Col>

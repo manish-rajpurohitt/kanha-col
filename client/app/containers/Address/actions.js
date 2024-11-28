@@ -28,6 +28,7 @@ import { API_URL } from '../../constants';
 export const addressChange = (name, value) => {
   let formData = {};
   formData[name] = value;
+  console.log(formData);
 
   return {
     type: ADDRESS_CHANGE,
@@ -97,7 +98,9 @@ export const addAddress = () => {
         city: 'required',
         state: 'required',
         country: 'required',
-        zipCode: 'required|min:5'
+        zipCode: 'required|min:6',
+        phoneNumber: 'required|min:10',
+        fullName: 'required',
       };
 
       const newAddress = getState().address.addressFormData;
@@ -108,7 +111,9 @@ export const addAddress = () => {
         'required.city': 'City is required.',
         'required.state': 'State is required.',
         'required.country': 'Country is required.',
-        'required.zipCode': 'Zipcode is required.'
+        'required.zipCode': 'Zipcode is required.',
+        'required.phoneNumber': 'Phone Number is required',
+        'required.fullName': 'Full Name is required',
       });
 
       if (!isValid) {
@@ -152,18 +157,25 @@ export const updateAddress = () => {
         city: 'required',
         state: 'required',
         address: 'required',
-        zipCode: 'required'
+        zipCode: 'required',
+        fullName: 'required',
+        phoneNumber: 'required',
       };
 
       const newAddress = getState().address.address;
+      console.log(newAddress);
 
       const { isValid, errors } = allFieldsValidation(newAddress, rules, {
         'required.address': 'Address is required.',
         'required.city': 'City is required.',
         'required.state': 'State is required.',
         'required.country': 'Country is required.',
-        'required.zipCode': 'Zipcode is required.'
+        'required.zipCode': 'Zipcode is required.',
+        'required.phoneNumber': 'Phone Number is required',
+        'required.fullName': 'Full Name is required',
       });
+      console.log(isValid, errors);
+
 
       if (!isValid) {
         return dispatch({

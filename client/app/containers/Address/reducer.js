@@ -25,7 +25,9 @@ const initialState = {
     state: '',
     country: '',
     zipCode: '',
-    isDefault: false
+    isDefault: false,
+    fullName: '',
+    phoneNumber: ''
   },
   address: {
     _id: '',
@@ -34,7 +36,9 @@ const initialState = {
     state: '',
     country: '',
     zipCode: '',
-    isDefault: false
+    isDefault: false,
+    fullName: '',
+    phoneNumber: ''
   },
   formErrors: {},
   editFormErrors: {}
@@ -102,7 +106,9 @@ const addressReducer = (state = initialState, action) => {
           state: '',
           country: '',
           zipCode: '',
-          isDefault: false
+          isDefault: false,
+          fullName: '',
+          phoneNumber: ''
         },
         formErrors: {}
       };
