@@ -178,9 +178,8 @@ class Navigation extends React.PureComponent {
                     onClick={() => this.toggleMenu()}
                   />
                 )}
-                <Link to='/' style={{ display: "flex", width: "100%", height: "100%" }}>
-                  <img src="/images/logo.jpg" height="30" width="30" style={{}} />
-                  <h1 className='logo'>Kanha Collections</h1>
+                <Link to='/' style={{ width: "85%", marginTop: "-7%", marginBottom: "-3%"  }}>
+                  <img src="/images/logo.svg" />
                 </Link>
               </div>
             </Col>

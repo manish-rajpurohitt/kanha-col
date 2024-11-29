@@ -6,17 +6,17 @@
 
 import React from 'react';
 
-import { Row, Col } from 'reactstrap';
+import { Row, Col, DropdownItem } from 'reactstrap';
 
 import { CART_ITEM_STATUS } from '../../../constants';
 import { formatDate } from '../../../utils/date';
 import Button from '../../Common/Button';
 import { ArrowBackIcon } from '../../Common/Icon';
 import DropdownConfirm from '../../Common/DropdownConfirm';
-import { ORDER_STATUS } from '../../../../../server/constants';
+import { ORDER_STATUS, ROLES } from '../../../../../server/constants';
 
 const OrderMeta = props => {
-  const { order, cancelOrder, onBack } = props;
+  const { order, user, cancelOrder, onBack, updateOrderItemStatus} = props;
 
   const getOrderStatusText = status => {
     switch (status) {
@@ -39,9 +39,14 @@ const OrderMeta = props => {
     }
   }
 
-  const renderMetaAction = () => {
+  const isAdmin = user.role === ROLES.Admin;
+  const statuses = Object.values(CART_ITEM_STATUS);
 
-    if (order.status !== ORDER_STATUS.Cancelled) {
+  const renderMetaAction = () => {
+    const isAdmin = user.role === ROLES.Admin;
+
+    if(isAdmin){
+    }else if (order.status !== ORDER_STATUS.Cancelled) {
       //return <Button size='sm' text='Cancel Order' disabled={true} onClick={cancelOrder} />;
       return (<DropdownConfirm label='Cancel'>
         <div className='d-flex flex-column align-items-center justify-content-center p-2'>
@@ -111,7 +116,8 @@ const OrderMeta = props => {
               <p className='one-line-ellipsis'>Order Status</p>
             </Col>
             <Col xs='8'>
-              <Button
+
+            {!isAdmin ? <Button
                 variant='secondary'
                 id='CancelOrderItemPopover'
                 size='sm'
@@ -119,7 +125,21 @@ const OrderMeta = props => {
                 onClick={() => makePayment()}
                 text={getOrderStatusText(order.status)}
                 role='menuitem'
-              />
+              />:
+          <DropdownConfirm
+            label={order.status}
+            className={isAdmin ? 'admin' : ''}
+          >
+            {statuses.map((s, i) => (
+                    <DropdownItem
+                      key={`${s}-${i}`}
+                      onClick={() => updateOrderItemStatus(order._id, s)}
+                    >
+                      {s}
+                    </DropdownItem>
+                  ))}
+          </DropdownConfirm>
+              }
             </Col>
           </Row>
         </Col>

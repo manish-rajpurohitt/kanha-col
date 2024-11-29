@@ -4,12 +4,15 @@ const Mongoose = require('mongoose');
 
 // Bring in Models & Utils
 const Order = require('../../models/order');
+const User = require('../../models/user');
+const Address = require('../../models/address');
 const Cart = require('../../models/cart');
 const Product = require('../../models/product');
 const auth = require('../../middleware/auth');
 const mailgun = require('../../services/mailgun');
 const store = require('../../utils/store');
-const { ROLES, CART_ITEM_STATUS, ORDER_STATUS } = require('../../constants');
+const { ROLES, CART_ITEM_STATUS, ORDER_STATUS, EMAIL_TEMPLATES } = require('../../constants');
+const role = require('../../middleware/role');
 
 router.post('/add', auth, async (req, res) => {
   try {
@@ -44,7 +47,10 @@ router.post('/add', auth, async (req, res) => {
       address: orderDoc.address
     };
 
-    await mailgun.sendEmail(order.user.email, 'order-information', process.env.CLIENT_URL, newOrder);
+    let userDoc = await User.findOne({_id: user});
+    let addressDoc = await Address.findOne({_id: address});
+
+    await mailgun.sendEmail(userDoc.email, EMAIL_TEMPLATES.ORDER_PLACED, {username: addressDoc.fullName, orderid: orderDoc._id});
 
     res.status(200).json({
       success: true,
@@ -52,6 +58,7 @@ router.post('/add', auth, async (req, res) => {
       order: { _id: orderDoc._id }
     });
   } catch (error) {
+    console.log(error);
     res.status(400).json({
       error: 'Your request could not be processed. Please try again.'
     });
@@ -250,7 +257,8 @@ router.get('/:orderId', auth, async (req, res) => {
       cartId: orderDoc.cart._id,
       address: orderDoc.address,
       status: orderDoc?.status,
-      sessId: orderDoc?.paymentSessionId
+      sessId: orderDoc?.paymentSessionId,
+      shipping: orderDoc.shipping
     };
 
     order = store.caculateTaxAmount(order);
@@ -288,51 +296,82 @@ router.delete('/cancel/:orderId', auth, async (req, res) => {
   }
 });
 
-router.put('/status/item/:itemId', auth, async (req, res) => {
+router.put('/addShipping/:orderId', auth, role.check(ROLES.Admin), async (req, res) => {
   try {
-    const itemId = req.params.itemId;
-    const orderId = req.body.orderId;
+    const orderId = req.params.orderId;
+
+    const order = await Order.findOne({ _id: orderId });
+    if(!order) return res.status(400).json({
+      success: false,
+      message: "Order not found"
+    });
+
+    let reee = await Order.updateOne({_id: orderId}, {
+      shipping:{
+        track: req.body.track,
+        provider: req.body.provider
+      }
+    });
+
+    res.status(200).json({
+      success: true
+    });
+  } catch (error) {
+    res.status(400).json({
+      error: 'Your request could not be processed. Please try again.'
+    });
+  }
+});
+
+router.put('/status/:orderId', auth, async (req, res) => {
+  try {
+    const orderId = req.params.orderId;
+    if(!orderId){
+      orderId = req.body.orderId
+    }
     const cartId = req.body.cartId;
     const status = req.body.status || CART_ITEM_STATUS.Cancelled;
 
-    const foundCart = await Cart.findOne({ 'products._id': itemId });
-    const foundCartProduct = foundCart.products.find(p => p._id == itemId);
-
-    await Cart.updateOne(
-      { 'products._id': itemId },
-      {
-        'products.$.status': status
+    const orderDoc = await Order.findOne({_id: orderId}).populate('cart').populate('address').populate('user');
+    const foundCart = await Cart.findOne({ _id: orderDoc.cart._id }).populate({
+      path: 'products.product',
+      populate: {
+        path: 'brand'
       }
-    );
+    });
 
     if (status === CART_ITEM_STATUS.Cancelled) {
-      await Product.updateOne(
-        { _id: foundCartProduct.product },
-        { $inc: { quantity: foundCartProduct.quantity } }
-      );
 
-      const cart = await Cart.findOne({ _id: cartId });
-      const items = cart.products.filter(
-        item => item.status === CART_ITEM_STATUS.Cancelled
-      );
+      await foundCart.products.map(async (pro)=>{
+        await Product.updateOne(
+          { _id: pro.product._id },
+          { $inc: { quantity: pro.quantity } }
+        );
+      })
+      
+      await Order.updateOne({ _id: orderId }, {status: CART_ITEM_STATUS.Cancelled});
 
-      // All items are cancelled => Cancel order
-      if (cart.products.length === items.length) {
-        await Order.deleteOne({ _id: orderId });
-        await Cart.deleteOne({ _id: cartId });
-
-        return res.status(200).json({
-          success: true,
-          orderCancelled: true,
-          message: `${req.user.role === ROLES.Admin ? 'Order' : 'Your order'
-            } has been cancelled successfully`
-        });
-      }
+      await mailgun.sendEmail(orderDoc.user.email, EMAIL_TEMPLATES.ORDER_CANCELLED, {username: orderDoc.address.fullName});
 
       return res.status(200).json({
         success: true,
-        message: 'Item has been cancelled successfully!'
+        orderCancelled: true,
+        message: `${req.user.role === ROLES.Admin ? 'Order' : 'Your order'
+          } has been cancelled successfully`
       });
+    }else{
+      await Order.updateOne({ _id: orderId }, {status: status});
+    }
+
+    switch(status){
+      case (CART_ITEM_STATUS.Shipped):
+        await mailgun.sendEmail(orderDoc.user.email, EMAIL_TEMPLATES.ORDER_SHIPPED, {username: orderDoc.address.fullName, orderid: orderDoc._id});
+        break;
+      case(CART_ITEM_STATUS.Delivered):
+        await mailgun.sendEmail(orderDoc.user.email, EMAIL_TEMPLATES.ORDER_DELIVERED, {username: orderDoc.address.fullName, orderId: orderDoc._id});
+        break;
+      default:
+        break;
     }
 
     res.status(200).json({
@@ -340,6 +379,7 @@ router.put('/status/item/:itemId', auth, async (req, res) => {
       message: 'Item status has been updated successfully!'
     });
   } catch (error) {
+    console.log(error);
     res.status(400).json({
       error: 'Your request could not be processed. Please try again.'
     });

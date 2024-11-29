@@ -44,7 +44,7 @@ const OrderList = props => {
                   <div className='mb-1'>
                     <span>Status</span>
                     {order?.products ? (
-                      <span className='order-label order-status'>{` ${order?.products[0].status}`}</span>
+                      <span className='order-label order-status'>{` ${order?.status}`}</span>
                     ) : (
                       <span className='order-label order-status'>{` Unavailable`}</span>
                     )}

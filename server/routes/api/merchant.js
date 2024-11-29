@@ -11,6 +11,7 @@ const Brand = require('../../models/brand');
 const auth = require('../../middleware/auth');
 const role = require('../../middleware/role');
 const mailgun = require('../../services/mailgun');
+const EMAIL_TEMPLATES = require("../../services/mailgun");
 
 // add merchant api
 router.post('/add', async (req, res) => {
@@ -330,7 +331,7 @@ const createMerchantUser = async (email, name, merchant, host) => {
 
     await createMerchantBrand(merchantDoc);
 
-    await mailgun.sendEmail(email, 'merchant-welcome', null, name);
+    await mailgun.sendEmail(email, EMAIL_TEMPLATES.WELCOME_MESSAGE, {username: name});
 
     return await User.findOneAndUpdate(query, update, {
       new: true

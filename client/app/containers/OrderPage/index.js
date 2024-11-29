@@ -34,7 +34,8 @@ class OrderPage extends React.PureComponent {
       user,
       isLoading,
       cancelOrder,
-      updateOrderItemStatus
+      updateOrderItemStatus,
+      addShippingInfoOrder
     } = this.props;
 
     return (
@@ -44,6 +45,7 @@ class OrderPage extends React.PureComponent {
         ) : order._id ? (
           <OrderDetails
             order={order}
+            addShippingInfoOrder={addShippingInfoOrder}
             user={user}
             cancelOrder={cancelOrder}
             updateOrderItemStatus={updateOrderItemStatus}

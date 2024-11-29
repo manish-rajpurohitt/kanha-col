@@ -12,7 +12,7 @@ const User = require('../../models/user');
 const mailchimp = require('../../services/mailchimp');
 const mailgun = require('../../services/mailgun');
 const keys = require('../../config/keys');
-const { EMAIL_PROVIDER, JWT_COOKIE } = require('../../constants');
+const { EMAIL_PROVIDER, JWT_COOKIE, EMAIL_TEMPLATES } = require('../../constants');
 
 const { secret, tokenLife } = keys.jwt;
 
@@ -134,9 +134,8 @@ router.post('/register', async (req, res) => {
 
     await mailgun.sendEmail(
       registeredUser.email,
-      'signup',
-      null,
-      registeredUser
+      EMAIL_TEMPLATES.WELCOME_MESSAGE,
+      {username: registeredUser.firstName}
     );
 
     const token = jwt.sign(payload, secret, { expiresIn: tokenLife });
@@ -171,6 +170,7 @@ router.post('/forgot', async (req, res) => {
     }
 
     const existingUser = await User.findOne({ email });
+    console.log(existingUser);
 
     if (!existingUser) {
       return res
@@ -188,9 +188,11 @@ router.post('/forgot', async (req, res) => {
 
     await mailgun.sendEmail(
       existingUser.email,
-      'reset',
-      req.headers.host,
-      resetToken
+      EMAIL_TEMPLATES.FORGOT_PASSWORD,
+      {
+        username: existingUser.firstName,
+        link: "https://" + req.headers.host + "/reset-password/" + resetToken
+      }
     );
 
     res.status(200).json({
@@ -233,7 +235,7 @@ router.post('/reset/:token', async (req, res) => {
 
     resetUser.save();
 
-    await mailgun.sendEmail(resetUser.email, 'reset-confirmation');
+    await mailgun.sendEmail(resetUser.email, EMAIL_TEMPLATES.RESET_PASSWORD, {username: resetUser.firstName});
 
     res.status(200).json({
       success: true,
@@ -280,7 +282,7 @@ router.post('/reset', auth, async (req, res) => {
     existingUser.password = hash;
     existingUser.save();
 
-    await mailgun.sendEmail(existingUser.email, 'reset-confirmation');
+    await mailgun.sendEmail(existingUser.email, EMAIL_TEMPLATES.RESET_PASSWORD, {username: existingUser.firstName});
 
     res.status(200).json({
       success: true,

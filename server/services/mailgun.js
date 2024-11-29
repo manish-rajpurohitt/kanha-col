@@ -1,6 +1,8 @@
 
 const template = require('../config/template');
+const templates = require('../config/templates');
 const nodemailer = require("nodemailer");
+const { EMAIL_TEMPLATES } = require('../constants');
 
 
 const transporter = nodemailer.createTransport({
@@ -11,18 +13,24 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-exports.sendEmail = async (email, type, host, data) => {
+exports.sendEmail = async (email, type, data) => {
   try {
-    const message = prepareTemplate(type, host, data);
-    console.log(message)
-
+    const message = prepareTemplates(type, data);
 
     const mailOptions = {
       from: process.env.GMAIL_FROM_MAIL, // Sender's email address
       to: email, // Recipient's email address
       subject: message.subject, // Email subject
-      html: message.text
+      html: message.text,
+      attachments: []
     };
+
+    if(type === EMAIL_TEMPLATES.SEND_SHIPPING_LABEL){
+      mailOptions.attachments.push({
+        filename: data.orderid + "_" + data.username+".pdf",
+        path: data.labelpath
+      })
+    }
 
     let ree = await transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
@@ -88,6 +96,48 @@ const prepareTemplate = (type, host, data) => {
     case 'label-generation':
       message = template.generateShippingLabel(data);
     default:
+      message = '';
+  }
+
+  return message;
+};
+
+
+const prepareTemplates = (type, data) => {
+  let message;
+
+  switch (type) {
+    case EMAIL_TEMPLATES.WELCOME_MESSAGE:
+      message = templates.welcomeMessage(data);
+      break;
+      case EMAIL_TEMPLATES.FORGOT_PASSWORD:
+        message = templates.forgotPassword(data);
+      break;
+      case EMAIL_TEMPLATES.ORDER_CANCELLED:
+          message = templates.orderCancelled(data);
+      break;
+      case EMAIL_TEMPLATES.ORDER_CONFIRMED:
+            message = templates.orderConfirmed(data);
+            break;
+      case EMAIL_TEMPLATES.ORDER_DELIVERED:
+              message = templates.orderDelivered(data);
+      break;
+              case EMAIL_TEMPLATES.ORDER_PLACED:
+                message = templates.orderPlaced(data);
+      break;
+                case EMAIL_TEMPLATES.ORDER_SHIPPED:
+                  message = templates.orderShipped(data);
+      break;
+                  case EMAIL_TEMPLATES.RESET_PASSWORD:
+                  message = templates.passwordResetSuccess(data);
+      break;
+                  case EMAIL_TEMPLATES.SEND_SHIPPING_LABEL:
+                    message = templates.sendShippingLabel(data);
+      break;
+      case EMAIL_TEMPLATES.PAYMENT_FAILED:
+        message = templates.paymentFailed(data);
+      break;
+      default:
       message = '';
   }
 

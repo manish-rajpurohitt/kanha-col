@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@cashfreepayments/cashfree-js": "^1.0.5",
-    "nodemailer": "^6.9.16"
+    "nodemailer": "^6.9.16",
+    "puppeteer": "^23.9.0"
   }
 }

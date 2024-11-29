@@ -15,25 +15,8 @@ import DropdownConfirm from '../../Common/DropdownConfirm';
 import { ORDER_STATUS } from '../../../../../server/constants';
 
 const OrderItems = props => {
-  const { order, user, updateOrderItemStatus } = props;
+  const { order, user } = props;
 
-  const renderPopoverContent = item => {
-    const statuses = Object.values(CART_ITEM_STATUS);
-
-    return (
-      <div className='d-flex flex-column align-items-center justify-content-center'>
-        {statuses.map((s, i) => (
-          <DropdownItem
-            key={`${s}-${i}`}
-            className={s === item?.status ? 'active' : ''}
-            onClick={() => updateOrderItemStatus(item._id, s)}
-          >
-            {s}
-          </DropdownItem>
-        ))}
-      </div>
-    );
-  };
 
   const renderItemsAction = item => {
     const isAdmin = user.role === ROLES.Admin;
@@ -54,14 +37,7 @@ const OrderItems = props => {
           <></>
         );
       } else {
-        return (
-          <DropdownConfirm
-            label={item.product && item.status}
-            className={isAdmin ? 'admin' : ''}
-          >
-            {renderPopoverContent(item)}
-          </DropdownConfirm>
-        );
+        return <></>
       }
     }
   };
@@ -96,7 +72,7 @@ const OrderItems = props => {
                           </Link>
                           <div className='d-flex align-items-center justify-content-between'>
                             <span className='price'>
-                              ${item.purchasePrice || item.product.price}
+                            ₹{item.purchasePrice || item.product.price}
                             </span>
                           </div>
                         </>
@@ -139,11 +115,6 @@ const OrderItems = props => {
                   </div>
                 </div>
               </div>
-              {item.product && (
-                <div className='text-right mt-2 mt-md-0'>
-                  {renderItemsAction(item)}
-                </div>
-              )}
             </div>
           </Col>
         ))}

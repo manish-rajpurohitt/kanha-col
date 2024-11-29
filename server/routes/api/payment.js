@@ -1,11 +1,12 @@
 const express = require('express');
 const Order = require('../../models/order');
-const { ORDER_STATUS } = require('../../constants');
+const { ORDER_STATUS, EMAIL_TEMPLATES } = require('../../constants');
 const payment = require('../../models/payment');
 const { ObjectId } = require('mongoose');
 const mailgun = require('../../services/mailgun');
 const auth = require('../../middleware/auth');
 const axios = require("axios");
+const { generateShippingLabel } = require('../../utils/utils');
 
 const router = express.Router();
 
@@ -198,21 +199,34 @@ router.get('/return', async (req, res) => {
             await Order.updateOne({ _id: orderId }, {
                 status: ORDER_STATUS.Payment_Success,
             });
-            await mailgun.sendEmail(order.user.email, 'order-confirmation', process.env.CLIENT_URL, order);
-            await mailgun.sendEmail("kanhacollections66@gmail.com", 'label-generation', process.env.CLIENT_URL, {
-                fullName: order.address.fullName,
-                address: order.address.address,
-                city: order.address.city,
-                state: order.address.state,
-                zipCode: order.address.zipCode,
-                phoneNumber: order.address.phoneNumber,
-                orderId: order._id
+            await mailgun.sendEmail(order.user.email, EMAIL_TEMPLATES.ORDER_CONFIRMED, {username: order.address.fullName, orderid: order._id});
+            let pathh = await generateShippingLabel(order);
+            await mailgun.sendEmail("kanhacollections66@gmail.com", EMAIL_TEMPLATES.SEND_SHIPPING_LABEL, {
+                orderid: order._id,
+                labelpath: pathh,
+                username: order.address.fullName
             });
         } else {
-            await Order.updateOne({ _id: orderId }, {
-                status: order.paymentRetryCount >= 3 ? ORDER_STATUS.Cancelled : ORDER_STATUS.Payment_Initiated,
-                paymentRetryCount: order.paymentRetryCount + 1
-            });
+
+            if(order.paymentRetryCount < 3){
+                await Order.updateOne({ _id: orderId }, {
+                    status: ORDER_STATUS.Payment_Initiated,
+                    paymentRetryCount: order.paymentRetryCount + 1
+                });
+                await mailgun.sendEmail(order.user.email, EMAIL_TEMPLATES.PAYMENT_FAILED, {
+                    orderid: order._id,
+                    username: order.address.fullName
+                });
+            }else{
+                await Order.updateOne({ _id: orderId }, {
+                    status: ORDER_STATUS.Cancelled,
+                    paymentRetryCount: order.paymentRetryCount + 1
+                });
+                await mailgun.sendEmail(order.user.email, EMAIL_TEMPLATES.ORDER_CANCELLED, {
+                    orderid: order._id,
+                    username: order.address.fullName
+                });
+            }
         }
 
         res.status(301).redirect(process.env.CLIENT_URL + "/order/" + orderId);

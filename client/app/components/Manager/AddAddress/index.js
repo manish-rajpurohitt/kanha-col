@@ -13,10 +13,13 @@ import Input from '../../Common/Input';
 import Button from '../../Common/Button';
 import { useDispatch } from 'react-redux';
 import { ADDRESS_CHANGE } from '../../../containers/Address/constants';
+import Loader from '../../Common/Loader';
 
 const AddAddress = props => {
   const { addressFormData, formErrors, addressChange, addAddress } = props;
   const [pincode, setpincode] = React.useState();
+  const [isLoading, setIsLoading] = React.useState(false);
+
 
   const handleSubmit = event => {
     event.preventDefault();
@@ -30,11 +33,28 @@ const AddAddress = props => {
     let pin = e.target.value;
 
     if (pin.length === 6) {
-      const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
-      const response = await res.json();
-      addressFormData['city'] = response[0].PostOffice[0].Name;
-      addressFormData['state'] = response[0].PostOffice[0].State;
-      addressFormData['country'] = response[0].PostOffice[0].Country;
+      try{
+        setIsLoading(true);
+        const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+        const response = await res.json();
+        addressFormData['city'] = response[0].PostOffice[0].Name;
+        addressFormData['state'] = response[0].PostOffice[0].State;
+        addressFormData['country'] = response[0].PostOffice[0].Country;
+        addressFormData['zipCode'] = pin;
+        dispatch({
+          type: ADDRESS_CHANGE,
+          payload: addressFormData
+        });
+        setIsLoading(false);
+      }
+      catch(err){
+        console.log("Pincode not found.");
+        setIsLoading(false);
+      }
+    }else{
+      addressFormData['city'] = "";
+      addressFormData['state'] = "";
+      addressFormData['country'] = "";
       addressFormData['zipCode'] = pin;
       dispatch({
         type: ADDRESS_CHANGE,
@@ -46,6 +66,7 @@ const AddAddress = props => {
 
   return (
     <div className='add-address'>
+      <Loader isLoading={isLoading} />
       <form onSubmit={handleSubmit} noValidate>
         <Row>
           <Col xs='12' lg='6'>

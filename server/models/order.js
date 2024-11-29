@@ -1,5 +1,4 @@
 const Mongoose = require('mongoose');
-const { UPDATE_ORDER_STATUS } = require('../../client/app/containers/Order/constants');
 const { CART_ITEM_STATUS, ORDER_STATUS } = require('../constants');
 const { Schema } = Mongoose;
 
@@ -20,6 +19,10 @@ const OrderSchema = new Schema({
   total: {
     type: Number,
     default: 0
+  },
+  shipping:{
+    provider:{type: String},
+    track: {type: String}
   },
   status: {
     type: String,

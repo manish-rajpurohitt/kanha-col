@@ -162,13 +162,13 @@ export const cancelOrder = () => {
   };
 };
 
-export const updateOrderItemStatus = (itemId, status) => {
+export const updateOrderItemStatus = (orderId, status) => {
   return async (dispatch, getState) => {
     try {
       const order = getState().order.order;
 
       const response = await axios.put(
-        `${API_URL}/order/status/item/${itemId}`,
+        `${API_URL}/order/status/${orderId}`,
         {
           orderId: order._id,
           cartId: order.cartId,
@@ -179,7 +179,7 @@ export const updateOrderItemStatus = (itemId, status) => {
       if (response.data.orderCancelled) {
         dispatch(push(`/dashboard/orders`));
       } else {
-        dispatch(updateOrderStatus({ itemId, status }));
+        dispatch(updateOrderStatus({ orderId, status }));
         dispatch(fetchOrder(order._id, false));
       }
 
@@ -226,6 +226,21 @@ export const addOrder = (addressId) => {
         dispatch(push(`/order/success/${response.data.order._id}`));
         cashfree.checkout(checkoutOptions);
       }
+    } catch (error) {
+      handleError(error, dispatch);
+    }
+  };
+};
+
+export const addShippingInfoOrder = (orderid, info) => {
+  return async (dispatch, getState) => {
+    try {
+      console.log(info)
+      const response = await axios.put(`${API_URL}/order/addShipping/${orderid}`, {
+        track: info.track,
+        provider: info.provider
+      });
+      return response.data.success
     } catch (error) {
       handleError(error, dispatch);
     }
